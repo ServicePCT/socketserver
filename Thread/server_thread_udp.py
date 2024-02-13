@@ -27,5 +27,5 @@ while True:
         print(data[1])
         # print(data[0])
 
-        time.sleep(1)
+        # time.sleep(1)
         publisher_rabbitmq(str({'id': client_port, 'status': 'Stop'}))
