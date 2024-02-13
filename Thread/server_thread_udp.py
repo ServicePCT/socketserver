@@ -6,7 +6,7 @@ import pika
 def publisher_rabbitmq(message: str):
     credentials = pika.PlainCredentials(username='admin', password='3rptn30t')
     connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='deploy.happydebt.kz', port=5672, credentials=credentials))
+        pika.ConnectionParameters(host='rabbit', port=5672, credentials=credentials))
     channel = connection.channel()
     channel.queue_declare(queue='test', durable=True, exclusive=False, auto_delete=False, arguments={})
     channel.basic_publish(exchange='assist', routing_key='test', body=message.encode())
