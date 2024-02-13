@@ -16,7 +16,7 @@ def publisher_rabbitmq(message: str):
 
 server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
 hostname = socket.gethostname()  # получаем имя хоста локальной машины
-port = 7568  # устанавливаем порт сервера
+port = 7676  # устанавливаем порт сервера
 server.bind(('', port))  # привязываем сокет сервера к хосту и порту
 print(f"Server running {hostname}")
 while True:
