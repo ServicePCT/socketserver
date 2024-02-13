@@ -1,0 +1,13 @@
+version: "3.1"
+services:
+  assistant:
+    dns:
+      - "192.168.127.1"
+    build: .
+    container_name: ii_assistent
+    restart: unless-stopped
+    volumes:
+      - ./Thread:/app
+    ports:
+      - "8888:8888"
+#    command: python OutgoingWebsocket.py

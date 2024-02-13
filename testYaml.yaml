@@ -1,0 +1,62 @@
+openapi: "3.0.3"
+
+info:
+  title: "API взаимодействия между сервисами"
+  description: Сервис для получения информации о взаимодествии сервисов между собой.
+  version: "0.0.1"
+  termsOfService: "https://deploy.happydebt.kz"
+  contact:
+    name: "ServicePCT"
+    url: "https://deploy.happydebt.kz/contact"
+    email: "vagif_a@mail.ru"
+  license:
+    name: "ServicePCT"
+    url: "https://deploy.happydebt.kz/license"
+
+servers:
+  - url: "https://deploy.happydebt.kz/dev/2.5"
+  - url: "https://deploy.happydebt.kz/main/1.3"
+paths:
+  /test:
+    get:
+      tags:
+        - "Главное меню поле выбора контрагента 'Договора'"
+      summary: "Запрос для фильтра выбора контрагента"
+      description: "***Необходимо в поле чтобы обновлялось автоматический*** для этого отправляем запрос при нажатии на меню </br> и получаем полный список перечня меню"
+      operationId: CurentID
+      parameters:
+        - name: select one
+          in: query
+          description: "Параметр включает в себя json ***{name: obj}*** зависит от других полей"
+          schema:
+            type: array
+
+        - name: select two
+          in: query
+          description: "Второй параметр независимый и только отвечает за себя"
+          schema:
+            type: string
+      responses:
+        200:
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                title: Sample
+                type: object
+                properties:
+                  placeholder:
+                    type: string
+                    description: Placeholder description
+                  text:
+                    type: object
+                    description: test
+
+        404:
+          description: Not found response
+          content:
+            text/plain:
+              schema:
+                title: Weater not found
+                type: string
+                example: Not Found
