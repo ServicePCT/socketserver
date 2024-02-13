@@ -8,6 +8,7 @@ RUN pip install soundfile
 RUN pip install resampy
 RUN pip install numpy
 RUN pip install pydub
+RUN pip install pika
 RUN #pip install pickle
 
 WORKDIR app
