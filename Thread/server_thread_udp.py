@@ -26,6 +26,8 @@ while True:
         publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
         print(data[1])
         # print(data[0])
-
+        file = open("script_dial/audio_" + str(client_port) + ".ulaw", "ab")
+        file.write(data[0])
+        file.close()
         # time.sleep(1)
         publisher_rabbitmq(str({'id': client_port, 'status': 'Stop'}))
