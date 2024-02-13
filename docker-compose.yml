@@ -9,5 +9,5 @@ services:
     volumes:
       - ./Thread:/app
     ports:
-      - "8888:8888"
+      - "7676:7676"
 #    command: python OutgoingWebsocket.py
