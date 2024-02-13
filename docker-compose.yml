@@ -8,6 +8,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./Thread:/app
+      - ./audio:/audio
     ports:
       - "7676:7676/udp"
     links:
