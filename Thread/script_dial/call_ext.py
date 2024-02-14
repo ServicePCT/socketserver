@@ -2,6 +2,14 @@ import time
 import requests
 
 number_dst = str(77757757775)
+
+# numbers to call
+wait_time = 30
+numbers = [
+    77077616580,
+]
+# number_dst = str(numbers[0])
+
 # create channel did
 url = 'https://ge.happydebt.kz:8089/ari/channels/create?endpoint=PJSIP%2F77059244900%2Fsip%3A' + number_dst + '%4046.227.186.229%3A5060&app=incoming&api_key=root:3rptn30t'
 header = {'content-type': 'application/json'}
@@ -40,7 +48,7 @@ req_send_dial = requests.post(
 # req_media_dial = requests.post(
 #     'https://ge.happydebt.kz:8089/ari/channels/' + media_channel_id + '/dial?api_key=root:3rptn30t')
 # kill channel
-time.sleep(20)
+time.sleep(wait_time)
 r_kill_channel_media = requests.delete('https://ge.happydebt.kz:8089/ari/channels/' + str(media_channel_id) + '?api_key=root:3rptn30t')
 r_kill_channel_did = requests.delete('https://ge.happydebt.kz:8089/ari/channels/' + str(chn_did_dial) + '?api_key=root:3rptn30t')
 # delete bridges
