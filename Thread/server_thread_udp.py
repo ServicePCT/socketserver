@@ -55,7 +55,6 @@ def publisher_rabbitmq(message: str):
            -2    =>    error: no packet received
 """
 STATUS_CODE_WAIT = -1
-STATUS_CODE_CONN_LOST = -2
 if __name__ == '__main__':
     # load autodial detector
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
@@ -79,13 +78,16 @@ if __name__ == '__main__':
         except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
 
         # process data if received
-        if data and len(data[0]):
+        if data:
+            # reset total timeout
+            counter_conn_total_timeout = 0
+
             """--------------------
                 extract client info
             """
             client_ip, client_port = data[1]
-            publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
-            print(data[1])
+            #publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
+            #print(data[1])
 
             """--------------------
                 save audio data
@@ -104,7 +106,7 @@ if __name__ == '__main__':
             """--------------------
                 autodial detect
             """
-            if audio_get_duration(filename) > detector.duration*10:
+            if audio_get_duration(filename) > detector.duration:
                 # trim silence and resample the audio
                 ret, audio_file_bytes = audio_trim_silence(
                     audio=filename,
@@ -123,7 +125,7 @@ if __name__ == '__main__':
             # notify
             publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
         else:
-            status_code = STATUS_CODE_CONN_LOST
+            status_code = STATUS_CODE_WAIT
 
         print(f'STATUS CODE: {status_code} |', '' if status_code < 0 else detector.classes_names[status_code])
 
@@ -132,9 +134,5 @@ if __name__ == '__main__':
             print(f'TIMEOUT: {counter_conn_total_timeout} secs')
             break
 
-        # send reply to the server
-        # time.sleep(1)
-        #publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
 
-        # end this session if connection is lost
-        #if status_code == STATUS_CODE_CONN_LOST: break
+# end
