@@ -5,7 +5,7 @@ import requests
 number_dst = str(77077274012)
 
 # numbers to call
-wait_time = 30
+wait_time = 50
 numbers = [
     77077616580,
 ]

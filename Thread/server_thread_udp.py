@@ -61,8 +61,9 @@ if __name__ == '__main__':
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # socket init
+    timeout_secs = 0.1
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
-    #server.settimeout(0.3)              # wait max 0.3 secs for a packet
+    server.settimeout(timeout_secs)     # wait max timeout_secs for a packet
     hostname = socket.gethostname()     # получаем имя хоста локальной машины
     port = 7676                         # устанавливаем порт сервера
     server.bind(('', port))             # привязываем сокет сервера к хосту и порту
@@ -70,12 +71,12 @@ if __name__ == '__main__':
     # run server
     print(f"Server running {hostname}")
     status_code = STATUS_CODE_WAIT
-    counter_conn_lost = 0
+    counter_conn_total_timeout = 0
     while True:
         # receive data
         data = None
         try: data = server.recvfrom(1024)
-        except: pass
+        except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
 
         # process data if received
         if data and len(data[0]):
@@ -121,8 +122,15 @@ if __name__ == '__main__':
 
             # notify
             publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
+        else:
+            status_code = STATUS_CODE_CONN_LOST
 
         print(f'STATUS CODE: {status_code} |', '' if status_code < 0 else detector.classes_names[status_code])
+
+        # check total timeout
+        if counter_conn_total_timeout > 10:
+            print(f'TIMEOUT: {counter_conn_total_timeout} secs')
+            break
 
         # send reply to the server
         # time.sleep(1)
