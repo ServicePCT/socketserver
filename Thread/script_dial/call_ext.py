@@ -1,7 +1,8 @@
 import time
 import requests
 
-number_dst = str(77757757775)
+#number_dst = str(77757757775)
+number_dst = str(77077274012)
 
 # numbers to call
 wait_time = 30
@@ -29,7 +30,7 @@ r = requests.post(
 add_did_channel_in_bridge = requests.post(
     'https://ge.happydebt.kz:8089/ari/bridges/' + id_bridge + '/addChannel?channel=' + chn_did_dial + '&api_key=root:3rptn30t')
 
-url = 'https://ge.happydebt.kz:8089/ari/channels/externalMedia?app=incoming&external_host=192.168.127.58%3A7676&encapsulation=rtp&transport=udp&connection_type=client&format=ulaw&direction=both&data=vaga&api_key=root:3rptn30t'
+url='https://ge.happydebt.kz:8089/ari/channels/externalMedia?app=incoming&external_host=192.168.127.58%3A7676&encapsulation=rtp&transport=udp&connection_type=client&format=alaw&direction=both&data=vaga&api_key=root:3rptn30t'
 # print(url)
 header = {'content-type': 'application/json'}
 

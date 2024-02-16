@@ -1,19 +1,39 @@
 # module server_thread_udp
 
 # system
-import socket
+import os
 import time
 import pika
+import socket
 from datetime import datetime
 # from _thread import *
 
 # audio
 from pydub import AudioSegment
-from pydub.playback import play as pydub_play
 
 # autoresponder
 from chat_assistent.autoresponder_detect.autoresponder_api import AutoResponderDetector, object_load
-from chat_assistent.tools.audio_processing import audio_trim_silence
+from chat_assistent.tools.audio_processing import (
+    audio_trim_silence,
+    audio_resample,
+    audio_alaw2wav,
+    audio_get_duration,
+    audio_get_sampling_rate,
+    audio_save,
+)
+
+
+def packet_strip_rtp_header(packet: bytes) -> bytes:
+    """Strips off RTP header and returns data payload
+
+    Args:
+        packet (bytes): rtp packet
+
+    Returns:
+        bytes: data payload
+    """
+    RTP_HEADER_SIZE = 12
+    return packet[RTP_HEADER_SIZE:]
 
 
 def publisher_rabbitmq(message: str):
@@ -27,57 +47,86 @@ def publisher_rabbitmq(message: str):
     connection.close()
 
 
+"""
+    STATUS CODES:
+    code >= 0    =>    detector autodial codes
+    code <  0    =>    server codes
+           -1    =>    wait
+           -2    =>    error: no packet received
+"""
+STATUS_CODE_WAIT = -1
+STATUS_CODE_CONN_LOST = -2
 if __name__ == '__main__':
     # load autodial detector
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
-    # audio settings
-    sampling_rate = 8000
-    seconds = 10 # read enough data for 1 second
-
     # socket init
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
-    hostname = socket.gethostname()  # получаем имя хоста локальной машины
-    port = 7676  # устанавливаем порт сервера
-    server.bind(('', port))  # привязываем сокет сервера к хосту и порту
+    #server.settimeout(0.3)              # wait max 0.3 secs for a packet
+    hostname = socket.gethostname()     # получаем имя хоста локальной машины
+    port = 7676                         # устанавливаем порт сервера
+    server.bind(('', port))             # привязываем сокет сервера к хосту и порту
 
     # run server
     print(f"Server running {hostname}")
+    status_code = STATUS_CODE_WAIT
+    counter_conn_lost = 0
     while True:
-        data = server.recvfrom(seconds*sampling_rate)
-        if data:
+        # receive data
+        data = None
+        try: data = server.recvfrom(1024)
+        except: pass
+
+        # process data if received
+        if data and len(data[0]):
+            """--------------------
+                extract client info
+            """
             client_ip, client_port = data[1]
             publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
             print(data[1])
 
-            """
+            """--------------------
                 save audio data
             """
             audio_data = data[0]
-            filename = f"/audio/audio_{client_port}_{int(datetime.now().timestamp())}.ulaw"
-            with open(filename, "ab") as file:
-                file.write(audio_data)
+            filename = f"/audio/audio_{client_port}.wav"
 
-            # pydub_play(filename)
-            """
+            # convert to ulaw to wav
+            audio_alaw2wav(
+                filename,
+                packet_strip_rtp_header(audio_data),
+                mode='a' if os.path.exists(filename) else 'w'
+            )
+            print(f'duration: {audio_get_duration(filename)}')
+
+            """--------------------
                 autodial detect
             """
-            # trim silence
-            # ret, audio_data = audio_trim_silence(
-            #    audio_data=audio_data,
-            #    audio_fmt='wav',
-            #    silence_thresh_db=20
-            # )
+            if audio_get_duration(filename) > detector.duration*10:
+                # trim silence and resample the audio
+                ret, audio_file_bytes = audio_trim_silence(
+                    audio=filename,
+                    audio_fmt='wav',
+                    silence_thresh_db=20,
+                    resample_rate=detector.resample_rate,
+                )
 
-            # check if audio_data is not silence
-            status_msg = 'Stop'
-            #if not (ret < 0):
-                # detect
-                # result_id = detector.predict_from_memory(audio_data)[0]
+                # detect only if audio is not silence
+                if not (ret < 0):
+                    status_code = detector.predict_from_memory(audio_file_bytes)[0]
 
-                # update status
-                # status_msg = detector.classes_names[result_id]
+                # remove the old file audio snippet
+                os.remove(filename) if os.path.exists(filename) else None
 
+            # notify
+            publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
 
-            # time.sleep(1)
-            publisher_rabbitmq(str({'id': client_port, 'status': status_msg}))
+        print(f'STATUS CODE: {status_code} |', '' if status_code < 0 else detector.classes_names[status_code])
+
+        # send reply to the server
+        # time.sleep(1)
+        #publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
+
+        # end this session if connection is lost
+        #if status_code == STATUS_CODE_CONN_LOST: break

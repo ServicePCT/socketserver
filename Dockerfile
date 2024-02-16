@@ -5,13 +5,8 @@ RUN apt install nano -y
 RUN apt install traceroute -y
 RUN apt install ffmpeg -y
 RUN pip install --upgrade pip
-RUN pip install librosa
-RUN pip install soundfile
-RUN pip install resampy
-RUN pip install numpy
-RUN pip install pydub
 RUN pip install pika
 RUN pip install requests
-RUN #pip install pickle
+RUN pip install -r ./Thread/chat_assistent/autoresponder_detect/requirements.txt
 
 WORKDIR app
