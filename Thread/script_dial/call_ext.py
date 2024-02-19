@@ -2,10 +2,11 @@ import time
 import requests
 
 #number_dst = str(77757757775)
-number_dst = str(77077274012)
+#number_dst = str(77077274012)
+number_dst = str(77472662816)
 
 # numbers to call
-wait_time = 50
+wait_time = 10
 numbers = [
     77077616580,
 ]
