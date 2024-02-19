@@ -52,9 +52,10 @@ def publisher_rabbitmq(message: str):
     code >= 0    =>    detector autodial codes
     code <  0    =>    server codes
            -1    =>    wait
-           -2    =>    error: no packet received
+           -2    =>    error: no packet received (connection lost)
 """
 STATUS_CODE_WAIT = -1
+STATUS_CODE_CONN_LOST = -2
 if __name__ == '__main__':
     # load autodial detector
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
@@ -69,6 +70,7 @@ if __name__ == '__main__':
 
     # run server
     print(f"Server running {hostname}")
+    verbose = True
     status_code = STATUS_CODE_WAIT
     counter_conn_total_timeout = 0
     while True:
@@ -101,7 +103,9 @@ if __name__ == '__main__':
                 packet_strip_rtp_header(audio_data),
                 mode='a' if os.path.exists(filename) else 'w'
             )
-            print(f'duration: {audio_get_duration(filename)}')
+
+            if verbose:
+                print(f'duration: {audio_get_duration(filename)}')
 
             """--------------------
                 autodial detect
@@ -122,16 +126,20 @@ if __name__ == '__main__':
                 # remove the old file audio snippet
                 os.remove(filename) if os.path.exists(filename) else None
 
-            # notify
-            publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
+                # notify
+                # TODO: do we need to send WAIT every time or just STATUS_CODE once
+                # upon recognition?
+                publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
+
+                if verbose:
+                    print(f'STATUS CODE: {status_code} |', 'SILENCE' if status_code < 0 else detector.classes_names[status_code])
         else:
             status_code = STATUS_CODE_WAIT
-
-        print(f'STATUS CODE: {status_code} |', '' if status_code < 0 else detector.classes_names[status_code])
 
         # check total timeout
         if counter_conn_total_timeout > 10:
             print(f'TIMEOUT: {counter_conn_total_timeout} secs')
+            publisher_rabbitmq(str({'id': client_port, 'status': STATUS_CODE_CONN_LOST}))
             break
 
 
