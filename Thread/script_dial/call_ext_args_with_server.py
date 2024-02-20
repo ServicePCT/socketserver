@@ -7,6 +7,9 @@ import requests
 import argparse
 import subprocess
 
+# data processing
+import pandas as pd
+
 
 if __name__ == '__main__':
     # setup
@@ -22,11 +25,18 @@ if __name__ == '__main__':
     # assert exists
     assert os.path.exists(args.autodial_server), f'autodial_server does not exist: <{args.autodial_server}>!'
 
+    # create data frame to store values
+    df = pd.DataFrame.from_dict({
+        'num': [],
+        'code': [],
+        'code_name': [],
+    })
+
     # get numbers
     numbers = args.nums.split(',')
     for i, number_dst in enumerate(numbers):
         # change 8 to 7
-        number_dst = '7' + number_dst[1:]
+        number_dst = '7' + number_dst.strip()[1:]
 
         # verbose
         if args.verbose:
@@ -92,6 +102,24 @@ if __name__ == '__main__':
 
         # wait for autodial server to shutdown
         pid_autodial.wait()
+        
+        # append return code to dataframe
+        classes = {
+            0: 'doesnt_exist', 
+            1: 'offline', 
+            2: 'other', 
+            3: 'ringing_bell', 
+            4: 'unavailable', 
+            5: 'wrong_number'
+        }
+        code = pid_autodial.returncode - 10
+        code_name = 'timeout' if code < 0 else classes[code]
+        tmp = pd.DataFrame.from_dict({
+            'num':[number_dst], 
+            'code':[code], 
+            'code_name':[code_name]
+        })
+        df = pd.concat([df, tmp])
 
         # kill channel
         time.sleep(float(args.wait))
@@ -100,7 +128,8 @@ if __name__ == '__main__':
         # delete bridges
         r_kill_bridge = requests.delete('https://ge.happydebt.kz:8089/ari/bridges/' + id_bridge + '?api_key=root:3rptn30t')
         
-        
+    # save results
+    df.to_csv('results.csv', index=False)
 
 
 
