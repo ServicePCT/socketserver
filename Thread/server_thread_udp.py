@@ -53,6 +53,10 @@ def publisher_rabbitmq(message: str):
     code <  0    =>    server codes
            -1    =>    wait
            -2    =>    error: no packet received (connection lost)
+
+    NOTIFICATIONS:
+    The server notifies upon detection only. Refer to timeout when to kill the
+    process.
 """
 STATUS_CODE_WAIT = -1
 STATUS_CODE_CONN_LOST = -2
@@ -120,40 +124,38 @@ if __name__ == '__main__':
                     resample_rate=detector.resample_rate,
                 )
 
-                # TODO: need this?
-                # ensure we have at least 0.8 seconds for recognition
+                # ensure we have the required duration for recognition
                 if audio_get_duration(audio_file_bytes) < detector.duration:
                     continue
-                else:
-                    with open(filename[:-4] + '_det.wav', 'wb') as f:
-                        f.write(audio_file_bytes)
 
-                # detect only if audio is not silence
+                # ensure audio is not silence
                 if not (ret < 0):
                     status_code = detector.predict_from_memory(audio_file_bytes)[0]
+
+                    # TODO: temporary?, remove?
+                    with open(filename[:-4] + f'_{datetime.now()}.wav', 'wb') as f:
+                        f.write(audio_file_bytes)
 
                 # remove the old file audio snippet
                 os.remove(filename) if os.path.exists(filename) else None
 
-                # notify
-                # TODO: do we need to send WAIT every time or just STATUS_CODE once
-                # upon recognition?
-                publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
-
                 if verbose:
                     print(f'STATUS CODE: {status_code} |', 'NO PACKET' if status_code < 0 else detector.classes_names[status_code])
 
+                # if recognized notify and exit
                 if status_code >= 0:
+                    publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
                     break
         else:
             status_code = STATUS_CODE_WAIT
 
         # check total timeout
         if counter_conn_total_timeout > conn_timeout_limit:
+            status_code = STATUS_CODE_CONN_LOST
             print(f'TIMEOUT: {counter_conn_total_timeout} secs')
             # publisher_rabbitmq(str({'id': client_port, 'status': STATUS_CODE_CONN_LOST}))
             break
 
-
+    exit(status_code+10)
 
 # end
