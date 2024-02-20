@@ -65,9 +65,9 @@ if __name__ == '__main__':
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # socket init
-    timeout_secs = 0.1
+    #timeout_secs = 0.1
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
-    server.settimeout(timeout_secs)     # wait max timeout_secs for a packet
+    #server.settimeout(timeout_secs)     # wait max timeout_secs for a packet
     hostname = socket.gethostname()     # получаем имя хоста локальной машины
     port = 7676                         # устанавливаем порт сервера
     server.bind(('', port))             # привязываем сокет сервера к хосту и порту
@@ -76,18 +76,19 @@ if __name__ == '__main__':
     print(f"Server running {hostname}")
     verbose = True
     status_code = STATUS_CODE_WAIT
-    conn_timeout_limit = 30
-    counter_conn_total_timeout = 0
+    #conn_timeout_limit = 30
+    #counter_conn_total_timeout = 0
     while True:
         # receive data
-        data = None
-        try: data = server.recvfrom(1024)
-        except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
+        #data = None
+        #try:
+        data = server.recvfrom(1024)
+        #except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
 
         # process data if received
         if data:
             # reset total timeout
-            counter_conn_total_timeout = 0
+            #counter_conn_total_timeout = 0
 
             """--------------------
                 extract client info
@@ -140,22 +141,22 @@ if __name__ == '__main__':
                 os.remove(filename) if os.path.exists(filename) else None
 
                 if verbose:
-                    print(f'STATUS CODE: {status_code} |', 'NO PACKET' if status_code < 0 else detector.classes_names[status_code])
+                    print(f'STATUS CODE: {client_port}:{status_code} |', 'NO PACKET' if status_code < 0 else detector.classes_names[status_code])
 
                 # if recognized notify and exit
                 if status_code >= 0:
                     publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
-                    break
+                    #break
         else:
             status_code = STATUS_CODE_WAIT
 
         # check total timeout
-        if counter_conn_total_timeout > conn_timeout_limit:
-            status_code = STATUS_CODE_CONN_LOST
-            print(f'TIMEOUT: {counter_conn_total_timeout} secs')
+        #if counter_conn_total_timeout > conn_timeout_limit:
+            #status_code = STATUS_CODE_CONN_LOST
+            #print(f'TIMEOUT: {counter_conn_total_timeout} secs')
             # publisher_rabbitmq(str({'id': client_port, 'status': STATUS_CODE_CONN_LOST}))
-            break
+            #break
 
-    exit(status_code+10)
+    #exit(status_code+10)
 
 # end
