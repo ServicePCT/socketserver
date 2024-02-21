@@ -1,1 +1,6 @@
-.idea# mediaaudio/audio/*.wav*.wav*.ulaw*.alaw*.adpcm*.mp3*.csv
+# custom
+.idea
+
+# media
+/audio
+audio/
