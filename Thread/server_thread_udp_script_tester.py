@@ -6,7 +6,6 @@ import time
 import pika
 import socket
 from datetime import datetime
-# from _thread import *
 
 # audio
 from pydub import AudioSegment
@@ -65,9 +64,9 @@ if __name__ == '__main__':
     detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # socket init
-    #timeout_secs = 0.1
+    timeout_secs = 0.1
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
-    #server.settimeout(timeout_secs)     # wait max timeout_secs for a packet
+    server.settimeout(timeout_secs)     # wait max timeout_secs for a packet
     hostname = socket.gethostname()     # получаем имя хоста локальной машины
     port = 7676                         # устанавливаем порт сервера
     server.bind(('', port))             # привязываем сокет сервера к хосту и порту
@@ -76,26 +75,23 @@ if __name__ == '__main__':
     print(f"Server running {hostname}")
     verbose = True
     status_code = STATUS_CODE_WAIT
-    #conn_timeout_limit = 30
-    #counter_conn_total_timeout = 0
+    conn_timeout_limit = 30
+    counter_conn_total_timeout = 0
     while True:
         # receive data
-        #data = None
-        #try:
-        data = server.recvfrom(1024)
-        #except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
+        data = None
+        try: data = server.recvfrom(1024)
+        except: counter_conn_total_timeout = counter_conn_total_timeout + timeout_secs
 
         # process data if received
         if data:
             # reset total timeout
-            #counter_conn_total_timeout = 0
+            counter_conn_total_timeout = 0
 
             """--------------------
                 extract client info
             """
             client_ip, client_port = data[1]
-            #publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
-            #print(data[1])
 
             """--------------------
                 save audio data
@@ -109,9 +105,6 @@ if __name__ == '__main__':
                 packet_strip_rtp_header(audio_data),
                 mode='a' if os.path.exists(filename) else 'w'
             )
-
-            #if verbose:
-            #    print(f'duration: {audio_get_duration(filename)}')
 
             """--------------------
                 autodial detect
@@ -127,14 +120,15 @@ if __name__ == '__main__':
 
                 # ensure we have the required duration for recognition
                 if audio_get_duration(audio_file_bytes) < detector.duration:
+                    with open(filename, 'wb') as f: f.write(audio_file_bytes)
                     continue
 
                 # ensure audio is not silence
                 if not (ret < 0):
                     status_code = detector.predict_from_memory(audio_file_bytes)[0]
 
-                    # TODO: temporary?, remove?
-                    with open(filename[:-4] + f'_{datetime.now()}.wav', 'wb') as f:
+                    # cache file for further training
+                    with open(filename[:-4] +f'_{detector.classes_names[status_code]}_{datetime.now()}.wav', 'wb') as f:
                         f.write(audio_file_bytes)
 
                 # remove the old file audio snippet
@@ -146,17 +140,16 @@ if __name__ == '__main__':
                 # if recognized notify and exit
                 if status_code >= 0:
                     publisher_rabbitmq(str({'id': client_port, 'status': status_code}))
-                    #break
+                    break
         else:
             status_code = STATUS_CODE_WAIT
 
         # check total timeout
-        #if counter_conn_total_timeout > conn_timeout_limit:
-            #status_code = STATUS_CODE_CONN_LOST
-            #print(f'TIMEOUT: {counter_conn_total_timeout} secs')
-            # publisher_rabbitmq(str({'id': client_port, 'status': STATUS_CODE_CONN_LOST}))
-            #break
+        if counter_conn_total_timeout > conn_timeout_limit:
+            status_code = STATUS_CODE_CONN_LOST
+            print(f'TIMEOUT: {counter_conn_total_timeout} secs')
+            break
 
-    #exit(status_code+10)
+    exit(status_code+10)
 
 # end

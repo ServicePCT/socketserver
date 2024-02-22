@@ -47,14 +47,14 @@ if __name__ == '__main__':
         if len(number_dst) != 11:
             if args.verbose: print(f'    INVALID: {number_dst}')
             continue
-        
+
         """------------
             START
         """
 
         # start autodial server
         pid_autodial = subprocess.Popen(['python', args.autodial_server])
-        
+
         # wait till the server starts up
         time.sleep(0.5)
 
@@ -102,22 +102,30 @@ if __name__ == '__main__':
 
         # wait for autodial server to shutdown
         pid_autodial.wait()
-        
+
         # append return code to dataframe
         classes = {
-            0: 'doesnt_exist', 
-            1: 'offline', 
-            2: 'other', 
-            3: 'ringing_bell', 
-            4: 'unavailable', 
-            5: 'wrong_number'
+            0: 'kz_doesnt_exist',
+            1: 'kz_not_registered',
+            2: 'kz_offline',
+            3: 'kz_out_of_reach',
+            4: 'kz_unavailable',
+            5: 'kz_wrong_number',
+            6: 'other',
+            7: 'ringing_bell',
+            8: 'ru_doesnt_exist',
+            9: 'ru_not_registered',
+            10: 'ru_offline',
+            11: 'ru_out_of_reach',
+            12: 'ru_unavailable',
+            13: 'ru_wrong_number'
         }
         code = pid_autodial.returncode - 10
         code_name = 'timeout' if code < 0 else classes[code]
         tmp = pd.DataFrame.from_dict({
-            'num':[number_dst], 
-            'code':[code], 
-            'code_name':[code_name]
+            'num':[number_dst],
+            'code':[code],
+            'code_name':[code_name[3:] if 'kz' in code_name or 'ru' in code_name else code_name]
         })
         df = pd.concat([df, tmp])
 
@@ -127,10 +135,6 @@ if __name__ == '__main__':
         r_kill_channel_did = requests.delete('https://ge.happydebt.kz:8089/ari/channels/' + str(chn_did_dial) + '?api_key=root:3rptn30t')
         # delete bridges
         r_kill_bridge = requests.delete('https://ge.happydebt.kz:8089/ari/bridges/' + id_bridge + '?api_key=root:3rptn30t')
-        
+
     # save results
     df.to_csv('results.csv', index=False)
-
-
-
-
