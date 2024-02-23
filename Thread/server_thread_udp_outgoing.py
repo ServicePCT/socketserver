@@ -1,6 +1,7 @@
 # module server_thread_udp
 
 # system
+import io
 import os
 import time
 import pika
@@ -9,6 +10,8 @@ import socket
 from datetime import datetime
 
 # audio
+import audioop
+import librosa
 from pydub import AudioSegment
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
@@ -89,11 +92,23 @@ if __name__ == '__main__':
                 try to send audio to client
             """
             # read audio
-            filename = '/audio/albert_11labs.mp3'
-            out_audio_data = AudioSegment.from_mp3(filename).set_frame_rate(8000)
+            filename = '/audio/albert_11labs.wav'
+            #out_audio_data = AudioSegment.from_wav(filename).set_frame_rate(8000)
+            out_audio_data, _ = librosa.load(filename, sr=8000)
+
+            # convert to bytes
+            alaw_data = audioop.lin2alaw(out_audio_data.tobytes(), 1)
+            out_audio_file = io.BytesIO(alaw_data)
+            #out_audio_file = io.BytesIO()
+            #audio_save(out_audio_file, out_audio_data, audio_format='wav', sample_rate=8000)
 
             # send audio to client
             print(f'{client_ip}::{client_port}')
+            READ_SIZE = 1024
+            s_data = out_audio_file.read(READ_SIZE)
+            while s_data:
+                if server.sendto(s_data, data[1]):
+                    s_data = out_audio_file.read(READ_SIZE)
 
             # publisher_rabbitmq(msg)
         else:
