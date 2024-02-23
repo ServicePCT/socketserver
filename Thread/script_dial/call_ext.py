@@ -6,7 +6,7 @@ number_dst = str(77077274012)
 #number_dst = str(77472662816)
 
 # numbers to call
-wait_time = 20
+wait_time = 30
 numbers = [
     77077616580,
 ]
