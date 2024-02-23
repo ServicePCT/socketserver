@@ -10,7 +10,6 @@ from datetime import datetime
 
 # audio
 from pydub import AudioSegment
-from pydub.playback import play as pydub_play
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
     audio_resample,
@@ -92,8 +91,9 @@ if __name__ == '__main__':
             # read audio
             filename = '/audio/albert_11labs.mp3'
             out_audio_data = AudioSegment.from_mp3(filename).set_frame_rate(8000)
-            #out_audio_data = librosa.load(filename, sr=8000)
-            pydub_play(out_audio_data)
+
+            # send audio to client
+            print(f'{client_ip}::{client_port}')
 
             # publisher_rabbitmq(msg)
         else:
