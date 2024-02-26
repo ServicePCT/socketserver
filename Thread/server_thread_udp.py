@@ -107,7 +107,7 @@ if __name__ == '__main__':
             """--------------------
                 autodial detect
             """
-            if audio_get_duration(filename) > detector.duration*1.5:
+            if audio_get_duration(filename) > detector.duration:
                 # trim silence and resample the audio
                 ret, audio_file_bytes = audio_trim_silence(
                     audio=filename,
