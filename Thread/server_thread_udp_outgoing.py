@@ -93,7 +93,6 @@ if __name__ == '__main__':
             """
             # read audio
             filename = '/audio/albert_11labs.wav'
-            #out_audio_data = AudioSegment.from_wav(filename).set_frame_rate(8000)
             out_audio_data, _ = librosa.load(filename, sr=8000)
 
             # convert to bytes
