@@ -1,6 +1,7 @@
 # module server_thread_udp
 
 # system
+import io
 import os
 import time
 import pika
@@ -15,6 +16,7 @@ from pydub import AudioSegment
 from chat_assistent.autoresponder_detect.autoresponder_api import AutoResponderDetector, object_load
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
+    audio_remove_silence,
     audio_resample,
     audio_alaw2wav,
     audio_get_duration,
@@ -107,17 +109,33 @@ if __name__ == '__main__':
             """--------------------
                 autodial detect
             """
-            if audio_get_duration(filename) > detector.duration:
+            if audio_get_duration(filename) > detector.duration*1.4:
+                """----------- OPTION 1 ----------------"""
                 # trim silence and resample the audio
                 ret, audio_file_bytes = audio_trim_silence(
                     audio=filename,
                     audio_fmt='wav',
-                    silence_thresh_db=20,
+                    silence_thresh_db=17,
                     resample_rate=detector.resample_rate,
                 )
+                """----------- OPTION 2 ----------------"""
+                # remove silence
+                #audio_rsb = audio_remove_silence(
+                #    audio=filename,
+                #    audio_fmt='wav',
+                #    silence_thresh_db=18,
+                #    combined=True,
+                #)[0]
+
+                # save audio_file_bytes
+                #audio_file_bytes = io.BytesIO()
+                #audio_save(audio_file_bytes, audio_data=audio_rsb, audio_format='wav', sample_rate=8000)
+                #audio_file_bytes = audio_file_bytes.read()
+                #ret = -1 if audio_get_duration(filename) == audio_get_duration(audio_file_bytes) else 0
+                """--------------------------------"""
 
                 # ensure we have the required duration for recognition
-                if audio_get_duration(audio_file_bytes) < detector.duration:
+                if audio_get_duration(audio_file_bytes) < detector.duration*0.8:
                     with open(filename, 'wb') as f: f.write(audio_file_bytes)
                     continue
 
