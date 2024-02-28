@@ -21,6 +21,10 @@ from chat_assistent.tools.audio_processing import (
     audio_get_sampling_rate,
     audio_save,
 )
+from chat_assistent.tools.rtp import (
+    rtp_packet_dpkt_encode,
+    rtp_packet_dpkt_decode,
+)
 
 
 def packet_strip_rtp_header(packet: bytes) -> bytes:
@@ -86,7 +90,7 @@ if __name__ == '__main__':
                 extract client info and audio
             """
             client_ip, client_port = data[1]
-            in_audio_data = data[0]
+            packet = rtp_packet_dpkt_decode(data[0])
 
             """--------------------
                 try to send audio to client
@@ -98,15 +102,18 @@ if __name__ == '__main__':
             # convert to bytes
             alaw_data = audioop.lin2alaw(out_audio_data.tobytes(), 1)
             out_audio_file = io.BytesIO(alaw_data)
-            #out_audio_file = io.BytesIO()
-            #audio_save(out_audio_file, out_audio_data, audio_format='wav', sample_rate=8000)
 
             # send audio to client
             print(f'{client_ip}::{client_port}')
             READ_SIZE = 1024
             s_data = out_audio_file.read(READ_SIZE)
             while s_data:
-                if server.sendto(s_data, data[1]):
+                rtp_packet = rtp_packet_dpkt_encode(i
+                    s_data,
+                    timestamp=0,
+                    ssrc=12345678,
+                )
+                if server.sendto(rtp_packet, data[1]):
                     s_data = out_audio_file.read(READ_SIZE)
 
             # publisher_rabbitmq(msg)

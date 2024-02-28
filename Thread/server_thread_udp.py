@@ -23,6 +23,15 @@ from chat_assistent.tools.audio_processing import (
     audio_get_sampling_rate,
     audio_save,
 )
+from chat_assistent.tools.rtp import (
+    rtp_packet_encode,
+    rtp_packet_dpkt_encode,
+    rtp_packet_dpkt_decode,
+    rtp_packet_decode,
+)
+from chat_assistent.tools.auxiliary import (
+    aux_timestamp2str,
+)
 
 
 def packet_strip_rtp_header(packet: bytes) -> bytes:
@@ -80,9 +89,9 @@ if __name__ == '__main__':
         print(f"Server running {hostname}")
 
     # run server
-    status_code = STATUS_CODE_WAIT
     while True:
         # receive data
+        status_code = STATUS_CODE_WAIT
         data = server.recvfrom(1024)
 
         # process data if received
@@ -94,28 +103,33 @@ if __name__ == '__main__':
             #publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
 
             """--------------------
+                decode RTP packet
+            """
+            packet = rtp_packet_dpkt_decode(data[0])
+
+            """--------------------
                 save audio data
             """
-            audio_data = data[0]
+            audio_data = packet['payload']
             filename = f"/audio/audio_{client_port}.wav"
 
             # convert to ulaw to wav
             audio_alaw2wav(
                 filename,
-                packet_strip_rtp_header(audio_data),
+                audio_data,
                 mode='a' if os.path.exists(filename) else 'w'
             )
 
             """--------------------
                 autodial detect
             """
-            if audio_get_duration(filename) > detector.duration*1.4:
+            if audio_get_duration(filename) > detector.duration*1.5:
                 """----------- OPTION 1 ----------------"""
                 # trim silence and resample the audio
                 ret, audio_file_bytes = audio_trim_silence(
                     audio=filename,
                     audio_fmt='wav',
-                    silence_thresh_db=17,
+                    silence_thresh_db=20,
                     resample_rate=detector.resample_rate,
                 )
                 """----------- OPTION 2 ----------------"""
@@ -135,7 +149,7 @@ if __name__ == '__main__':
                 """--------------------------------"""
 
                 # ensure we have the required duration for recognition
-                if audio_get_duration(audio_file_bytes) < detector.duration*0.8:
+                if audio_get_duration(audio_file_bytes) < detector.duration*0.9:
                     with open(filename, 'wb') as f: f.write(audio_file_bytes)
                     continue
 
@@ -152,14 +166,15 @@ if __name__ == '__main__':
                 os.remove(filename) if os.path.exists(filename) else None
 
                 if verbose:
-                    print(f'STATUS CODE: {client_port}:{status_code} |', 'NO PACKET' if status_code < 0 else detector.classes_names[status_code])
+                    print(f'STATUS CODE: {client_port}:{status_code} |', 'WAIT' if status_code < 0 else detector.classes_names[status_code])
 
                 # if recognized notify and exit
                 if status_code >= 0:
                     msg = json.dumps({'id': f'{client_port}', 'status': f'{status_code}'})
                     publisher_rabbitmq(msg)
         else:
-            status_code = STATUS_CODE_WAIT
+            status_code = STATUS_CODE_CONN_LOST
+            if verbose: print(f'STATUS CODE: {status_code} | NO_PACKET')
 
 
 # end
