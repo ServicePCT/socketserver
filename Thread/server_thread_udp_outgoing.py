@@ -100,7 +100,7 @@ if __name__ == '__main__':
             out_audio_data, _ = librosa.load(filename, sr=8000)
 
             # convert to bytes
-            alaw_data = audioop.lin2alaw(out_audio_data.tobytes(), 1)
+            alaw_data = audioop.lin2alaw(out_audio_data.tobytes(), 2)
             out_audio_file = io.BytesIO(alaw_data)
 
             # send audio to client
@@ -108,12 +108,12 @@ if __name__ == '__main__':
             READ_SIZE = 1024
             s_data = out_audio_file.read(READ_SIZE)
             while s_data:
-                rtp_packet = rtp_packet_dpkt_encode(i
-                    s_data,
-                    timestamp=0,
-                    ssrc=12345678,
-                )
-                if server.sendto(rtp_packet, data[1]):
+                #rtp_packet = rtp_packet_dpkt_encode(
+                #    s_data,
+                #    timestamp=0,
+                #    ssrc=12345678,
+                #)
+                if server.sendto(s_data, data[1]):
                     s_data = out_audio_file.read(READ_SIZE)
 
             # publisher_rabbitmq(msg)

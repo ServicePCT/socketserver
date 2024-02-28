@@ -162,8 +162,8 @@ if __name__ == '__main__':
                         with open(filename[:-4] + f'_{detector.classes_names[status_code]}_{datetime.now()}.wav', 'wb') as f:
                             f.write(audio_file_bytes)
 
-                # remove the old file audio snippet
-                #os.remove(filename) if os.path.exists(filename) else None
+                    # remove the old file audio snippet
+                    os.remove(filename) if os.path.exists(filename) else None
 
                 if verbose:
                     print(f'STATUS CODE: {client_port}:{status_code} |', 'WAIT' if status_code < 0 else detector.classes_names[status_code])
