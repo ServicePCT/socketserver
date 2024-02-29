@@ -6,8 +6,11 @@ import os
 import time
 import pika
 import json
-import socket
 from datetime import datetime
+
+# socket
+import ssl
+import socket
 
 # audio
 import audioop
@@ -51,6 +54,27 @@ def publisher_rabbitmq(message: str):
     connection.close()
 
 
+def socket_send_packet(host, port, packet):
+    # create a UDP socket
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    # connect to the client
+    client_address = (host, port)
+    client_socket.connect(client_address)
+
+    status = True
+    try:
+        # send the message
+        client_socket.sendall(packet)
+    except:
+        # failed to send message
+        status = False
+
+    # close the socket
+    client_socket.close()
+    return status
+
+
 """
     STATUS CODES:
     code >= 0    =>    detector autodial codes
@@ -68,6 +92,8 @@ if __name__ == '__main__':
     # init
     cache = True
     verbose = True
+    READ_SIZE = 1024
+    SAMPLE_RATE = 8000
 
     # socket init
     port = 7676
@@ -79,10 +105,11 @@ if __name__ == '__main__':
         print(f"Server running {hostname}")
 
     # run server
+    seq = 0
     status_code = STATUS_CODE_WAIT
     while True:
         # receive data
-        data = server.recvfrom(1024)
+        data = server.recvfrom(READ_SIZE)
 
         # process data if received
         if data:
@@ -91,32 +118,47 @@ if __name__ == '__main__':
             """
             client_ip, client_port = data[1]
             packet = rtp_packet_dpkt_decode(data[0])
+            del packet['payload']
+            print(packet, end='\n')
 
             """--------------------
                 try to send audio to client
             """
             # read audio
-            filename = '/audio/albert_11labs.wav'
-            out_audio_data, _ = librosa.load(filename, sr=8000)
-
-            # convert to bytes
-            alaw_data = audioop.lin2alaw(out_audio_data.tobytes(), 2)
-            out_audio_file = io.BytesIO(alaw_data)
+            filename = '/audio/ALBERT.wav'
+            audio = AudioSegment.from_wav(filename)
+            iobuf = io.BytesIO(audio.raw_data)
 
             # send audio to client
             print(f'{client_ip}::{client_port}')
-            READ_SIZE = 1024
-            s_data = out_audio_file.read(READ_SIZE)
-            while s_data:
-                #rtp_packet = rtp_packet_dpkt_encode(
-                #    s_data,
-                #    timestamp=0,
-                #    ssrc=12345678,
-                #)
-                if server.sendto(s_data, data[1]):
-                    s_data = out_audio_file.read(READ_SIZE)
+            wav_data = iobuf.read(READ_SIZE)
+            timestamp_counter = int(time.time() * SAMPLE_RATE) #packet['timestamp']
+            print(timestamp_counter)
+            while wav_data:
+                # convert to bytes
+                alaw_data = audioop.lin2alaw(wav_data, audio.sample_width)
 
-            # publisher_rabbitmq(msg)
+                # create rtp packet
+                rtp_packet = rtp_packet_dpkt_encode(
+                    payload=alaw_data,
+                    payload_type=packet['payload_type'],
+                    sequence_number=seq,
+                    timestamp=timestamp_counter,
+                    ssrc=packet['ssrc']+1,
+                )
+
+                # send
+                #if socket_send_packet(client_ip, client_port, rtp_packet):
+                if server.sendto(rtp_packet, data[1]):
+                    wav_data = iobuf.read(READ_SIZE)
+                    seq = (seq + 1) & 0xFFFF
+                    timestamp_counter += len(alaw_data)
+                else:
+                    print('error send!')
+
+                #time.sleep(0.020)
+            print(f'packet(pt: {packet["payload_type"]}, sq: {seq}, ts: {timestamp_counter}, ssrc: {packet["ssrc"]+1})')
+            print('next:')
         else:
             status_code = STATUS_CODE_WAIT
 
