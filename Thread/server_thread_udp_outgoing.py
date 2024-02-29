@@ -20,6 +20,7 @@ from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
     audio_resample,
     audio_alaw2wav,
+    audio_wav2alaw,
     audio_get_duration,
     audio_get_sampling_rate,
     audio_save,
@@ -104,6 +105,11 @@ if __name__ == '__main__':
     if verbose:
         print(f"Server running {hostname}")
 
+    # read and preprocess audio file
+    filename = '/audio/ALBERT.wav'
+    raw_alaw = audio_wav2alaw(filename)
+    iobuf = io.BytesIO(raw_alaw)
+
     # run server
     seq = 0
     status_code = STATUS_CODE_WAIT
@@ -118,12 +124,31 @@ if __name__ == '__main__':
             """
             client_ip, client_port = data[1]
             packet = rtp_packet_dpkt_decode(data[0])
-            del packet['payload']
-            print(packet, end='\n')
 
             """--------------------
                 try to send audio to client
             """
+            # convert to bytes
+            alaw_chunk = None if iobuf.tell() == len(iobuf.getbuffer()) else iobuf.read(READ_SIZE)
+            if alaw_chunk:
+                # create rtp packet
+                rtp = rtp_packet_dpkt_encode(
+                    payload=alaw_chunk,
+                    payload_type=packet['payload_type'],
+                    sequence_number=packet['sequence_number'],
+                    timestamp=packet['timestamp'],
+                    ssrc=packet['ssrc'],
+                )
+
+                # send packet
+                if not server.sendto(rtp, data[1]):
+                    print('! error sendto')
+            else:
+                time.sleep(3)
+                iobuf.seek(0)
+
+            time.sleep(0.12)
+            '''
             # read audio
             filename = '/audio/ALBERT.wav'
             audio = AudioSegment.from_wav(filename)
@@ -132,7 +157,7 @@ if __name__ == '__main__':
             # send audio to client
             print(f'{client_ip}::{client_port}')
             wav_data = iobuf.read(READ_SIZE)
-            timestamp_counter = int(time.time() * SAMPLE_RATE) #packet['timestamp']
+            timestamp_counter = int(READ_SIZE * SAMPLE_RATE) #packet['timestamp']
             print(timestamp_counter)
             while wav_data:
                 # convert to bytes
@@ -159,6 +184,20 @@ if __name__ == '__main__':
                 #time.sleep(0.020)
             print(f'packet(pt: {packet["payload_type"]}, sq: {seq}, ts: {timestamp_counter}, ssrc: {packet["ssrc"]+1})')
             print('next:')
+            '''
+
+            '''
+            packet = rtp_packet_dpkt_decode(data[0])
+            rtp = rtp_packet_dpkt_encode(
+                payload=packet['payload'],
+                payload_type=packet['payload_type'],
+                sequence_number=packet['sequence_number'],
+                timestamp=packet['timestamp'],
+                ssrc=packet['ssrc'],
+            )
+            if not server.sendto(rtp, data[1]):
+                print('! error sendto')
+            '''
         else:
             status_code = STATUS_CODE_WAIT
 
