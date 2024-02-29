@@ -106,7 +106,8 @@ if __name__ == '__main__':
         print(f"Server running {hostname}")
 
     # read and preprocess audio file
-    filename = '/audio/ALBERT.wav'
+    filename = '/audio/BARK.wav'
+    #filename = '/audio/ALBERT.wav'
     raw_alaw = audio_wav2alaw(filename)
     iobuf = io.BytesIO(raw_alaw)
 

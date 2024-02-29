@@ -2,7 +2,8 @@ import time
 import requests
 
 #number_dst = str(77757757775)
-number_dst = str(77077274012)
+#number_dst = str(77077274012)
+number_dst = str(77012770034)
 #number_dst = str(77472662816)
 
 # numbers to call
