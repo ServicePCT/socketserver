@@ -36,15 +36,22 @@ from chat_assistent.tools.rtp import (
 from chat_assistent.tools.logging import log_print
 
 
-def publisher_rabbitmq(message: str):
+def rabbitmq_publish(message: str, queue: str = 'test'):
     credentials = pika.PlainCredentials(username='admin', password='3rptn30t')
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='rabbit', port=5672, credentials=credentials))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(
+            host='rabbit',
+            port=5672,
+            credentials=credentials
+    ))
     channel = connection.channel()
-    channel.queue_declare(queue='test', durable=True, exclusive=False, auto_delete=False, arguments={})
+    channel.queue_declare(queue=queue, durable=True, exclusive=False, auto_delete=False, arguments={})
     channel.basic_publish(exchange='assist', routing_key='test', body=message.encode())
     channel.close()
     connection.close()
+
+
+def rabbitmq_receive(message: str):
+    pass
 
 
 if __name__ == '__main__':
