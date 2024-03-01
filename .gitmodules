@@ -1,0 +1,3 @@
+[submodule "Thread/chat_assistent"]
+	path = Thread/chat_assistent
+	url = git@github.com:ServicePCT/chat_assistent.git
