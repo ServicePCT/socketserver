@@ -3,6 +3,7 @@
 # system
 import io
 import os
+import sys
 import time
 import pika
 import json
@@ -13,6 +14,7 @@ from datetime import datetime
 from pydub import AudioSegment
 
 # autoresponder
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 from chat_assistent.autoresponder_detect.autoresponder_api import AutoResponderDetector, object_load
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     verbose = True
 
     # load autodial detector
-    detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
+    detector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # socket init
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера

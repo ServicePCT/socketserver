@@ -2,6 +2,7 @@
 
 # system
 import os
+import sys
 import time
 import pika
 import socket
@@ -11,6 +12,7 @@ from datetime import datetime
 from pydub import AudioSegment
 
 # autoresponder
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 from chat_assistent.autoresponder_detect.autoresponder_api import AutoResponderDetector, object_load
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
@@ -61,7 +63,7 @@ STATUS_CODE_WAIT = -1
 STATUS_CODE_CONN_LOST = -2
 if __name__ == '__main__':
     # load autodial detector
-    detector = object_load('chat_assistent/autoresponder_detect/autoresponder_model.pkl')
+    detector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # socket init
     timeout_secs = 0.1

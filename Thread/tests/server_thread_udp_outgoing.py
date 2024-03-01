@@ -3,6 +3,7 @@
 # system
 import io
 import os
+import sys
 import time
 import pika
 import json
@@ -16,6 +17,9 @@ import socket
 import audioop
 import librosa
 from pydub import AudioSegment
+
+# autodial
+sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
     audio_resample,
@@ -106,8 +110,8 @@ if __name__ == '__main__':
         print(f"Server running {hostname}")
 
     # read and preprocess audio file
-    filename = '/audio/BARK.wav'
-    #filename = '/audio/ALBERT.wav'
+    filename = '/audio/samples/BARK.wav'
+    #filename = '/audio/samples/ALBERT.wav'
     raw_alaw = audio_wav2alaw(filename)
     iobuf = io.BytesIO(raw_alaw)
 
