@@ -7,6 +7,7 @@ import sys
 import time
 import pika
 import json
+import pymongo
 import socket
 from datetime import datetime
 
@@ -34,9 +35,9 @@ from chat_assistent.tools.rtp import (
 from chat_assistent.tools.auxiliary import (
     aux_timestamp2str,
 )
-from chat_assistent.tools.rabbitmq import (
-    RabbitCredentials,
-    RabbitSession,
+from chat_assistent.tools.mongo import (
+    mongo_collection_update,
+    mongo_collection_count_doc,
 )
 
 
@@ -51,6 +52,24 @@ def packet_strip_rtp_header(packet: bytes) -> bytes:
     """
     RTP_HEADER_SIZE = 12
     return packet[RTP_HEADER_SIZE:]
+
+
+def publisher_mongo(
+    client: pymongo.MongoClient,
+    port: int,
+    status: int,
+    dbname: str = 'gepard',
+    colname: str = 'detect_human'
+):
+    # check if document with `port` has emtpy `status` and update with new value
+    if mongo_collection_count_doc(client, dbname, colname, {'port': f'{port}', 'status': ''}) > 0:
+        mongo_collection_update(
+            client,
+            dbname,
+            colname,
+            {'port': f'{port}', 'status': ''},
+            {'port': f'{port}', 'status': f'{status}'},
+        )
 
 
 def publisher_rabbitmq(message: str):
@@ -105,6 +124,11 @@ if __name__ == '__main__':
     # load autodial detector
     detector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
+    # init mongo session
+    dbname = 'gepard'
+    colname = 'detect_human'
+    mongo_client = pymongo.MongoClient('mongodb://deploy.happydebt.kz:27017/')
+
     # socket init
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
     hostname = socket.gethostname()     # получаем имя хоста локальной машины
@@ -125,8 +149,10 @@ if __name__ == '__main__':
             """--------------------
                 extract client info
             """
+            # check if we need to perform detection with port
             client_ip, client_port = data[1]
-            #publisher_rabbitmq(str({'id': client_port, 'status': 'Start'}))
+            if mongo_collection_count_doc(mongo_client, dbname, colname, {'port': f'{port}', 'status': ''}) == 0:
+                continue
 
             """--------------------
                 decode RTP packet
@@ -196,8 +222,9 @@ if __name__ == '__main__':
 
                 # if recognized notify and exit
                 if status_code >= 0:
-                    msg = json.dumps({'id': f'{client_port}', 'status': f'{status_code}'})
-                    publisher_rabbitmq(msg)
+                    publisher_mongo(client, port, status, dbname, colname)
+                    #msg = json.dumps({'id': f'{client_port}', 'status': f'{status_code}'})
+                    #publisher_rabbitmq(msg)
         else:
             status_code = STATUS_CODE_CONN_LOST
             if verbose: print(f'STATUS CODE: {status_code} | NO_PACKET')
