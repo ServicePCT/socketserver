@@ -9,7 +9,7 @@ number_dst = str(77077274012)
 # number_dst = str(77012770034)
 # number_dst = str(77472662816)
 
-mng_host = 'deploy.happydebt.kz'
+mng_host = 'mongodb'
 mng_port = '27017'
 def __db_object():
     try:
