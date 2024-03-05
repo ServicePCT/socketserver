@@ -11,7 +11,7 @@ number_dst = str(77077274012)
 
 mng_host = 'mongodb'
 mng_port = '27017'
-def __db_object():
+def db_object():
     # try:
     mng_url = 'mongodb://' + mng_host + ':' + mng_port + '/'
     print(mng_url)
@@ -25,7 +25,7 @@ def __db_object():
 
 def insert_db(json_data):
     # try:
-    dbconnect = __db_object()
+    dbconnect = db_object()
     dbcollect = dbconnect['human_detect']
     dbcollect.insert_one(json_data)
     return True
