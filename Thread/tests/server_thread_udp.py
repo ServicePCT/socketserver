@@ -34,6 +34,10 @@ from chat_assistent.tools.rtp import (
 from chat_assistent.tools.auxiliary import (
     aux_timestamp2str,
 )
+from chat_assistent.tools.rabbitmq import (
+    RabbitCredentials,
+    RabbitSession,
+)
 
 
 def packet_strip_rtp_header(packet: bytes) -> bytes:
@@ -50,6 +54,7 @@ def packet_strip_rtp_header(packet: bytes) -> bytes:
 
 
 def publisher_rabbitmq(message: str):
+    # """ ----- OLD -----
     credentials = pika.PlainCredentials(username='admin', password='3rptn30t')
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host='rabbit', port=5672, credentials=credentials))
@@ -58,6 +63,25 @@ def publisher_rabbitmq(message: str):
     channel.basic_publish(exchange='assist', routing_key='test', body=message.encode())
     channel.close()
     connection.close()
+    """
+
+    # init rabbit credentials
+    credentials = RabbitCredentials(
+        host='rabbit',
+        port=5672,
+        username='admin',
+        passwd='3rptn30t',
+    )
+
+    # publish
+    with RabbitSession(credentials) as rs:
+        rs.publish(
+            message=message,
+            queue='test',
+            exchange='assist',
+            routing_key='test',
+        )
+    """
 
 
 """
