@@ -127,7 +127,7 @@ if __name__ == '__main__':
     # init mongo session
     dbname = 'gepard'
     colname = 'detect_human'
-    mongo_client = pymongo.MongoClient('mongodb://deploy.happydebt.kz:27017/')
+    mongo_client = pymongo.MongoClient('mongodb://mongodb:27017/')
 
     # socket init
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
