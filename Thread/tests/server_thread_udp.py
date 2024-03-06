@@ -149,12 +149,16 @@ if __name__ == '__main__':
             """--------------------
                 extract client info
             """
-            # check if we need to perform detection with port
             client_ip, client_port = data[1]
-            #if not mongo_collection_find_one(
-            #    mongo_client, dbname, colname,
-            #    {'port':f'{client_port}', 'status':''},
-            #): continue
+
+            # check if we need to perform detection with client port
+            # (if no detection was run yet)
+            if not mongo_collection_find_one(
+                mongo_client, dbname, colname,
+                {'port':f'{client_port}', 'status':''},
+            ):
+                if verbose: print(f'status is already filled, skip this port: {client_port}')
+                continue
 
             # update last time received rtp
             mongo_collection_update_one(

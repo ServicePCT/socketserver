@@ -70,6 +70,7 @@ print(json_obj_media)
 reslt = insert_db({
     "port": json_obj_media['channelvars']['UNICASTRTP_LOCAL_PORT'],
     "time_init": datetime.now().isoformat(sep=" ", timespec="seconds"),
+    "time_last_update": datetime.now().isoformat(sep=" ", timespec="seconds"),
     "status": ""
 })
 
