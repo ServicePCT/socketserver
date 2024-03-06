@@ -1,11 +1,10 @@
 import time
 import requests
+from datetime import datetime
 from pymongo import MongoClient, UpdateOne, UpdateMany, InsertOne, DeleteOne, ReplaceOne
 
 # number_dst = str(77757757775)
 number_dst = str(77077274012)
-
-
 # number_dst = str(77012770034)
 # number_dst = str(77472662816)
 
@@ -70,6 +69,7 @@ print(json_obj_media)
 
 reslt = insert_db({
     "port": json_obj_media['channelvars']['UNICASTRTP_LOCAL_PORT'],
+    "time_init": datetime.now().isoformat(sep=" ", timespec="seconds"),
     "status": ""
 })
 

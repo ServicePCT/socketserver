@@ -36,8 +36,8 @@ from chat_assistent.tools.auxiliary import (
     aux_timestamp2str,
 )
 from chat_assistent.tools.mongo import (
-    mongo_collection_update,
-    mongo_collection_count_doc,
+    mongo_collection_update_one,
+    mongo_collection_find_one,
 )
 
 
@@ -59,16 +59,16 @@ def publisher_mongo(
     port: int,
     status: int,
     dbname: str = 'gepard',
-    colname: str = 'detect_human'
+    colname: str = 'human_detect'
 ):
     # check if document with `port` has emtpy `status` and update with new value
-    if mongo_collection_count_doc(client, dbname, colname, {'port': f'{port}', 'status': ''}) > 0:
-        mongo_collection_update(
+    if mongo_collection_find_one(client, dbname, colname, {'port': f'{port}'}):
+        mongo_collection_update_one(
             client,
             dbname,
             colname,
-            {'port': f'{port}', 'status': ''},
-            {'port': f'{port}', 'status': f'{status}'},
+            {'port': f'{port}'},
+            {'status': f'{status}'},
         )
 
 
@@ -126,7 +126,7 @@ if __name__ == '__main__':
 
     # init mongo session
     dbname = 'gepard'
-    colname = 'detect_human'
+    colname = 'human_detect'
     mongo_client = pymongo.MongoClient('mongodb://mongodb:27017/')
 
     # socket init
@@ -151,8 +151,18 @@ if __name__ == '__main__':
             """
             # check if we need to perform detection with port
             client_ip, client_port = data[1]
-            if mongo_collection_count_doc(mongo_client, dbname, colname, {'port': f'{port}', 'status': ''}) == 0:
-                continue
+            #if not mongo_collection_find_one(
+            #    mongo_client, dbname, colname,
+            #    {'port':f'{client_port}', 'status':''},
+            #): continue
+
+            # update last time received rtp
+            mongo_collection_update_one(
+                    mongo_client, dbname, colname,
+                    {'port':f'{client_port}'},
+                    {'time_last_update': datetime.now().isoformat(sep=" ", timespec="seconds")}
+                )
+
 
             """--------------------
                 decode RTP packet
@@ -201,7 +211,7 @@ if __name__ == '__main__':
                 """--------------------------------"""
 
                 # ensure we have the required duration for recognition
-                if audio_get_duration(audio_file_bytes) < detector.duration*0.9:
+                if audio_get_duration(audio_file_bytes) < detector.duration*0.8:
                     with open(filename, 'wb') as f: f.write(audio_file_bytes)
                     continue
 
@@ -222,9 +232,13 @@ if __name__ == '__main__':
 
                 # if recognized notify and exit
                 if status_code >= 0:
-                    publisher_mongo(client, port, status, dbname, colname)
-                    #msg = json.dumps({'id': f'{client_port}', 'status': f'{status_code}'})
-                    #publisher_rabbitmq(msg)
+                    publisher_mongo(
+                        mongo_client,
+                        client_port,
+                        status_code,
+                        dbname=dbname,
+                        colname=colname
+                    )
         else:
             status_code = STATUS_CODE_CONN_LOST
             if verbose: print(f'STATUS CODE: {status_code} | NO_PACKET')
