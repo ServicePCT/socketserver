@@ -41,19 +41,6 @@ from chat_assistent.tools.mongo import (
 )
 
 
-def packet_strip_rtp_header(packet: bytes) -> bytes:
-    """Strips off RTP header and returns data payload
-
-    Args:
-        packet (bytes): rtp packet
-
-    Returns:
-        bytes: data payload
-    """
-    RTP_HEADER_SIZE = 12
-    return packet[RTP_HEADER_SIZE:]
-
-
 def publisher_mongo(
     client: pymongo.MongoClient,
     port: int,
@@ -70,38 +57,6 @@ def publisher_mongo(
             {'port': f'{port}'},
             {'status': f'{status}'},
         )
-
-
-def publisher_rabbitmq(message: str):
-    # """ ----- OLD -----
-    credentials = pika.PlainCredentials(username='admin', password='3rptn30t')
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host='rabbit', port=5672, credentials=credentials))
-    channel = connection.channel()
-    channel.queue_declare(queue='test', durable=True, exclusive=False, auto_delete=False, arguments={})
-    channel.basic_publish(exchange='assist', routing_key='test', body=message.encode())
-    channel.close()
-    connection.close()
-    """
-
-    # init rabbit credentials
-    credentials = RabbitCredentials(
-        host='rabbit',
-        port=5672,
-        username='admin',
-        passwd='3rptn30t',
-    )
-
-    # publish
-    with RabbitSession(credentials) as rs:
-        rs.publish(
-            message=message,
-            queue='test',
-            exchange='assist',
-            routing_key='test',
-        )
-    """
-
 
 """
     STATUS CODES:
@@ -122,7 +77,7 @@ if __name__ == '__main__':
     verbose = True
 
     # load autodial detector
-    detector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
+    detector: AutoResponderDetector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # init mongo session
     dbname = 'gepard'
