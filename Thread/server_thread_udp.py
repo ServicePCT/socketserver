@@ -77,7 +77,7 @@ if __name__ == '__main__':
     verbose = True
 
     # load autodial detector
-    detector: AutoResponderDetector = object_load('../chat_assistent/autoresponder_detect/autoresponder_model.pkl')
+    detector: AutoResponderDetector = object_load('./chat_assistent/autoresponder_detect/autoresponder_model.pkl')
 
     # init mongo session
     dbname = 'gepard'
