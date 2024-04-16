@@ -128,8 +128,8 @@ if __name__ == '__main__':
     dbname = 'gepard'
     colname = 'human_detect'
     mongo_client = pymongo.MongoClient(
-        'mongodb://deploy.happydebt.kz:27017/'
-        # 'mongodb://mongodb:27017/'
+        # 'mongodb://deploy.happydebt.kz:27017/'
+        'mongodb://mongodb:27017/'
     )
 
     # socket init

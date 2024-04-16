@@ -12,8 +12,8 @@ mng_host = 'mongodb'
 mng_port = '27017'
 def db_object():
     # try:
-    # mng_url = 'mongodb://' + mng_host + ':' + mng_port + '/'
-    mng_url = 'mongodb://deploy.happydebt.kz:27017/'
+    mng_url = 'mongodb://' + mng_host + ':' + mng_port + '/'
+    # mng_url = 'mongodb://deploy.happydebt.kz:27017/'
     print(mng_url)
     client = MongoClient(mng_url)
     mydb = client['gepard']
