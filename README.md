@@ -4,9 +4,7 @@
 Example:
 ```
 #  пример клонирования с submodules
-git clone git://github.com/username/repo.git
-cd repo
-git submodule update --init --recursive 
+git clone --recurse-submodules mygit/mygit.git
 ```
 
 
