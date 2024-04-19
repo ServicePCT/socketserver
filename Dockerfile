@@ -13,3 +13,5 @@ WORKDIR /app
 ADD /Thread/chat_assistent/autoresponder_detect/requirements.txt requirements.txt
 RUN pip install -r ./requirements.txt
 RUN rm ./requirements.txt
+RUN unlink /etc/localtime
+RUN ln -s /usr/share/zoneinfo/Asia/Almaty /etc/localtime
