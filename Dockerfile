@@ -7,6 +7,7 @@ RUN apt install ffmpeg -y
 RUN pip install --upgrade pip
 RUN pip install pika
 RUN pip install requests
+RUN pip install torch
 
 WORKDIR /app
 
