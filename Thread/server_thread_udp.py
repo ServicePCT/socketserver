@@ -154,10 +154,10 @@ if __name__ == '__main__':
             """
             if audio_get_duration(filename) > detector.duration*1.5:
                 # trim silence and resample the audio
-                ret, audio_file_bytes = audio_trim_silence(
+                ret, audio_file_bytes = audio_trim_silence_pydub(
                     audio=filename,
                     audio_fmt='wav',
-                    silence_thresh_db=20,
+                    silence_thresh_db=15,
                     resample_rate=detector.resample_rate,
                 )
 
