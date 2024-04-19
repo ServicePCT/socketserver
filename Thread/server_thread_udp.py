@@ -116,19 +116,19 @@ if __name__ == '__main__':
             # check if we need to perform detection with client port (if no detection was run yet)
             doc = mongo_collection_find_one(mongo_client, dbname, colname, {'port':f'{client_port}', 'status':''})
             if not doc:
-                if verbose and last_received_port != client_port: 
+                if verbose and last_received_port != client_port:
                     last_received_port = client_port
                     print(f'status is already filled, skip this port: {client_port}')
                 continue
-            
+
             # create update_doc query
             update_doc = {'time_last_update': datetime.now().isoformat(sep=' ', timespec='seconds')}
             if not 'time_first_received' in doc: update_doc['time_first_received'] = datetime.now().isoformat(sep=' ', timespec='seconds')
-            
+
             # update last time received rtp
             mongo_collection_update_one(
-                client=mongo_client, 
-                dbname=dbname, 
+                client=mongo_client,
+                dbname=dbname,
                 colname=colname,
                 query={'port':f'{client_port}'},
                 update_doc=update_doc,
