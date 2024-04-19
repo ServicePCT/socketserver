@@ -157,7 +157,7 @@ if __name__ == '__main__':
                 ret, audio_file_bytes = audio_trim_silence_pydub(
                     audio=filename,
                     audio_fmt='wav',
-                    silence_thresh_db=16,
+                    silence_thresh_db=18,
                     resample_rate=detector.resample_rate,
                 )
 
