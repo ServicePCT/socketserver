@@ -19,6 +19,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../'))
 from chat_assistent.autoresponder_detect.autoresponder_api import AutoResponderDetector, object_load
 from chat_assistent.tools.audio_processing import (
     audio_trim_silence,
+    audio_trim_silence_pydub,
     audio_remove_silence,
     audio_resample,
     audio_alaw2wav,
@@ -153,10 +154,10 @@ if __name__ == '__main__':
             """
             if audio_get_duration(filename) > detector.duration*1.5:
                 # trim silence and resample the audio
-                ret, audio_file_bytes = audio_trim_silence(
+                ret, audio_file_bytes = audio_trim_silence_pydub(
                     audio=filename,
                     audio_fmt='wav',
-                    silence_thresh_db=20,
+                    silence_thresh_db=16,
                     resample_rate=detector.resample_rate,
                 )
 
