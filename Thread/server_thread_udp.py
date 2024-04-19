@@ -45,6 +45,7 @@ def publisher_mongo(
     client: pymongo.MongoClient,
     port: int,
     status: int,
+    status_str: str,
     dbname: str = 'gepard',
     colname: str = 'human_detect'
 ):
@@ -55,7 +56,7 @@ def publisher_mongo(
             dbname,
             colname,
             {'port': f'{port}'},
-            {'status': f'{status}'},
+            {'status': f'{status}', 'status_str': status_str},
         )
 
 """
@@ -82,10 +83,7 @@ if __name__ == '__main__':
     # init mongo session
     dbname = 'gepard'
     colname = 'human_detect'
-    mongo_client = pymongo.MongoClient(
-        # 'mongodb://deploy.happydebt.kz:27017/'
-        'mongodb://mongodb:27017/'
-    )
+    mongo_client = pymongo.MongoClient('mongodb://mongodb:27017/')
 
     # socket init
     server = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)  # создаем объект сокета сервера
@@ -97,6 +95,7 @@ if __name__ == '__main__':
         print(f"Server running {hostname}")
 
     # run server
+    last_received_port = -1
     while True:
         # receive data
         status_code = STATUS_CODE_WAIT
@@ -109,21 +108,26 @@ if __name__ == '__main__':
             """
             client_ip, client_port = data[1]
 
-            # check if we need to perform detection with client port
-            # (if no detection was run yet)
-            if not mongo_collection_find_one(
-                mongo_client, dbname, colname,
-                {'port':f'{client_port}', 'status':''},
-            ):
-                if verbose: print(f'status is already filled, skip this port: {client_port}')
+            # check if we need to perform detection with client port (if no detection was run yet)
+            doc = mongo_collection_find_one(mongo_client, dbname, colname, {'port':f'{client_port}', 'status':''})
+            if not doc:
+                if verbose and last_received_port != client_port: 
+                    last_received_port = client_port
+                    print(f'status is already filled, skip this port: {client_port}')
                 continue
-
+            
+            # create update_doc query
+            update_doc = {'time_last_update': datetime.now().isoformat(sep=' ', timespec='seconds')}
+            if not 'time_first_received' in doc: update_doc['time_first_received'] = datetime.now().isoformat(sep=' ', timespec='seconds')
+            
             # update last time received rtp
             mongo_collection_update_one(
-                    mongo_client, dbname, colname,
-                    {'port':f'{client_port}'},
-                    {'time_last_update': datetime.now().isoformat(sep=" ", timespec="seconds")}
-                )
+                client=mongo_client, 
+                dbname=dbname, 
+                colname=colname,
+                query={'port':f'{client_port}'},
+                update_doc=update_doc,
+            )
 
 
             """--------------------
@@ -148,7 +152,6 @@ if __name__ == '__main__':
                 autodial detect
             """
             if audio_get_duration(filename) > detector.duration*1.5:
-                """----------- OPTION 1 ----------------"""
                 # trim silence and resample the audio
                 ret, audio_file_bytes = audio_trim_silence(
                     audio=filename,
@@ -156,21 +159,6 @@ if __name__ == '__main__':
                     silence_thresh_db=20,
                     resample_rate=detector.resample_rate,
                 )
-                """----------- OPTION 2 ----------------"""
-                # remove silence
-                #audio_rsb = audio_remove_silence(
-                #    audio=filename,
-                #    audio_fmt='wav',
-                #    silence_thresh_db=18,
-                #    combined=True,
-                #)[0]
-
-                # save audio_file_bytes
-                #audio_file_bytes = io.BytesIO()
-                #audio_save(audio_file_bytes, audio_data=audio_rsb, audio_format='wav', sample_rate=8000)
-                #audio_file_bytes = audio_file_bytes.read()
-                #ret = -1 if audio_get_duration(filename) == audio_get_duration(audio_file_bytes) else 0
-                """--------------------------------"""
 
                 # ensure we have the required duration for recognition
                 if audio_get_duration(audio_file_bytes) < detector.duration*0.8:
@@ -195,9 +183,10 @@ if __name__ == '__main__':
                 # if recognized notify and exit
                 if status_code >= 0:
                     publisher_mongo(
-                        mongo_client,
-                        client_port,
-                        status_code,
+                        client=mongo_client,
+                        port=client_port,
+                        status=status_code,
+                        status_str=detector.classes_names[status_code],
                         dbname=dbname,
                         colname=colname
                     )
