@@ -11,6 +11,10 @@ import pymongo
 import socket
 from datetime import datetime
 
+# ignore deprecation warnings
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning) 
+
 # audio
 from pydub import AudioSegment
 
