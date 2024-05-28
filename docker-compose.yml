@@ -12,14 +12,17 @@ services:
     ports:
       - "7676:7676/udp"
     links:
-      - "rabbit:rabbit"
-    command: ping 192.168.127.1
-  rabbit:
-    dns:
-      - "192.168.127.1"
-    image: rabbitmq:3.12-management
-    container_name: rabbit
+      - "mongodb:mongodb"
+    command: python server_thread_udp.py
+  mongodb:
+    image: mongodb/mongodb-enterprise-server:4.4.8-ubi8
     restart: unless-stopped
+    container_name: mongodb
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "27017:27017"
+    volumes:
+      - mongodb_config:/data/configdb
+      - mongodb_data:/data/db
+volumes:
+  mongodb_config:
+  mongodb_data:
