@@ -11,15 +11,9 @@ services:
       - ./audio:/audio
     ports:
       - "7676:7676/udp"
-    links:
-      - "rabbit:rabbit"
-    command: ping 192.168.127.1
-  rabbit:
-    dns:
-      - "192.168.127.1"
-    image: rabbitmq:3.12-management
-    container_name: rabbit
-    restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
+    command: python server_thread_udp.py
+    networks:
+      local-network:
+networks:
+  local-network:
+    external: true
