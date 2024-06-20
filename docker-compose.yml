@@ -11,27 +11,7 @@ services:
       - ./audio:/audio
     ports:
       - "7676:7676/udp"
-<<<<<<< HEAD
-    links:
-      - "mongodb:mongodb"
     command: python server_thread_udp.py
-  mongodb:
-    image: mongodb/mongodb-enterprise-server:4.4.8-ubi8
-    restart: unless-stopped
-    container_name: mongodb
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb_config:/data/configdb
-      - mongodb_data:/data/db
-volumes:
-  mongodb_config:
-  mongodb_data:
-=======
-    command: python server_thread_udp.py
-    networks:
-      local-network:
 networks:
   local-network:
     external: true
->>>>>>> 361e941460e239c6e75fcf4d933f6e314296dcdc
